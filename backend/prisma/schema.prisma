@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ItemStatus {
+  available
+  taken
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email        String   @unique @db.VarChar(255)
+  name         String?  @db.VarChar(150)
+  passwordHash String?  @map("password_hash") @db.VarChar(255)
+  isActive     Boolean  @default(true) @map("is_active")
+  googleId     String?  @unique @map("google_id") @db.VarChar(100)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  itemsCreated Item[]      @relation("ItemCreatedBy")
+  handovers    Handover[]
+  auditLogs    AuditLog[]
+
+  @@map("admins")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(100)
+
+  subcategories Subcategory[]
+  items         Item[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id         Int    @id @default(autoincrement())
+  categoryId Int    @map("category_id")
+  name       String @db.VarChar(100)
+
+  category Category @relation(fields: [categoryId], references: [id])
+  items    Item[]
+
+  @@unique([categoryId, name])
+  @@map("subcategories")
+}
+
+model Color {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+  hex  String @db.VarChar(7)
+
+  items Item[]
+
+  @@map("colors")
+}
+
+model PosLocation {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(150)
+  description String? @db.Text
+  mapUrl      String? @map("map_url") @db.VarChar(500)
+
+  @@map("pos_locations")
+}
+
+model Item {
+  id            Int        @id @default(autoincrement())
+  code          String     @unique @db.VarChar(30)
+  name          String     @db.VarChar(200)
+  description   String?    @db.Text
+  categoryId    Int        @map("category_id")
+  subcategoryId Int?       @map("subcategory_id")
+  colorId       Int?       @map("color_id")
+  photoUrl      String     @map("photo_url") @db.VarChar(500)
+  foundLocation String     @map("found_location") @db.VarChar(200)
+  foundAt       DateTime   @default(now()) @map("found_at")
+  status        ItemStatus @default(available)
+  aiConfidence  Float?     @map("ai_confidence")
+  createdById   Int        @map("created_by")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  deletedAt     DateTime?  @map("deleted_at")
+
+  category    Category     @relation(fields: [categoryId], references: [id])
+  subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
+  color       Color?       @relation(fields: [colorId], references: [id])
+  createdBy   Admin        @relation("ItemCreatedBy", fields: [createdById], references: [id])
+  handover    Handover?
+
+  @@index([status, deletedAt])
+  @@index([categoryId])
+  @@index([foundAt])
+  @@map("items")
+}
+
+model Handover {
+  id            Int      @id @default(autoincrement())
+  itemId        Int      @unique @map("item_id")
+  takerName     String   @map("taker_name") @db.VarChar(150)
+  takerNim      String   @map("taker_nim") @db.VarChar(30)
+  ktmVerified   Boolean  @default(false) @map("ktm_verified")
+  handedAt      DateTime @default(now()) @map("handed_at")
+  handledById   Int      @map("handled_by")
+
+  item      Item  @relation(fields: [itemId], references: [id])
+  handledBy Admin @relation(fields: [handledById], references: [id])
+
+  @@map("handovers")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  adminId   Int      @map("admin_id")
+  action    String   @db.VarChar(50)
+  entity    String   @db.VarChar(50)
+  entityId  Int?     @map("entity_id")
+  detail    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin Admin @relation(fields: [adminId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

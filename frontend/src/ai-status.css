@@ -1,0 +1,43 @@
+.item-form-photo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ai-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.45;
+  background: #eef3ff;
+  border-left: 4px solid var(--blue);
+}
+
+.ai-status-warn {
+  background: #fff4d6;
+  border-left-color: #d49a00;
+}
+
+.ai-status svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ai-status-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-spin {
+  animation: ai-spin 1s linear infinite;
+}
+
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
